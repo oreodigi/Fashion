@@ -313,3 +313,27 @@
   }
   .silk-scroll,.rack-viewport{scroll-behavior:auto}
 }
+
+
+/* Phone-first gestures. The page retains native vertical scrolling while
+   horizontal finger movement changes the current editorial card. */
+.touch-swipe-hint,.mobile-reel-note,.bridal-swipe-note{display:none}
+.swipe-surface{touch-action:pan-y;overscroll-behavior-x:contain}
+@media(max-width:800px){
+  .look-stage-bottom>div,
+  .reel-buttons,
+  .bridal-control .icon-button{display:none}
+  .touch-swipe-hint{display:inline-block;color:#8c6b51;letter-spacing:.02em;font-size:11px;font-weight:700}
+  .reel-note .desktop-reel-note{display:none}
+  .reel-note .mobile-reel-note{display:inline}
+  .bridal-swipe-note{display:block;margin:0 0 14px;text-align:center;font-size:11px;color:#866e61;letter-spacing:.04em}
+  .bridal-control{justify-content:flex-start}
+  .look-stage-bottom{gap:7px}
+  .look-stage-bottom>span:first-child{max-width:60%}
+  .look-stage-bottom .touch-swipe-hint{max-width:42%;text-align:right}
+  .reel-note{font-size:10px}
+}
+@media(max-width:560px){
+  .look-stage-bottom .touch-swipe-hint{font-size:9px}
+  .bridal-swipe-note{font-size:10px}
+}
