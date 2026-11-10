@@ -5,8 +5,8 @@ Interactive editorial showcase inspired by the design brief and screenshots shar
 **Live preview:** https://tejum.in/fashion/
 
 ## What works
-- Nine responsive sections: hero, archive, Try the Look, Pick a Silk, product rack, motion lookbook, editorial reels, bridal collection and closing.
-- Interactive look changer, filterable product rack, product details, demo-size selection, wishlist, and shopping bag.
+- Ten responsive sections: hero, archive, Try the Look, Pick a Silk, photographic saree rack, editorial gallery, motion lookbook, editorial reels, bridal collection and closing.
+- Interactive look changer, filterable photographic rack featuring 24 illustrative styles, product details, demo-size selection, wishlist, and shopping bag.
 - Local browser persistence of saved items and bag.
 - Editorial motion experience based on still images. There are no actual films or video files in the original reference.
 - Desktop and mobile layouts, hover effects, reduced-motion support and keyboard Escape for overlays.
@@ -16,9 +16,16 @@ Interactive editorial showcase inspired by the design brief and screenshots shar
 The motion system is deliberately split between:
 - `src/MotionDirector.jsx`: GSAP + ScrollTrigger chapter tracking, hero camera depth, staged entrances, collection/reel/bridal reveals, and fine-pointer tilt listeners. Animations are React-scoped with `@gsap/react`, and listeners/contexts are reverted on unmount or media-query change.
 - `src/motion.css`: visual lighting, highlight treatments, CSS-only hover/press feedback, and reduced-motion styles.
+- `src/photography.css`: responsive real-photo rack, gallery mosaic and photographic closing scene.
 - `src/App.jsx`: stateful wishlist, bag, filters and selected carousel items. Existing React interactions remain the source of truth.
 
 No scroll-jacking, pinning, WebGL engine or custom RAF loop was introduced. Motion is restricted on touch/mobile and disabled for `prefers-reduced-motion` where ornamental. The scroll progress indicator still conveys useful position.
+
+## Saree photography and catalog
+- **31 hand-selected Pexels photographs**, optimized to ~2.9 MB total WebP, committed under `public/images/` and served locally at `/fashion/images/`.
+- 24 sample catalog entries cover silk sarees, bridal zari, occasion looks and blouse styling, with a filterable photo rack and eight-image editorial gallery.
+- A visible [image credits page](https://tejum.in/fashion/photo-credits.html) links to the source files and explains permitted editorial demonstration use.
+- Images depict **illustrative styles only**: the pictured people do not endorse NOOLAM, and the clothing is not claimed to be actual inventory. Replace images and invented prices with your brand's licensed product photography before enabling a real storefront.
 
 ## Build
 ```bash
