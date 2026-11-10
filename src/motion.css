@@ -245,7 +245,8 @@
 .ticker:hover .ticker-track { animation-play-state: paused; }
 
 /* No extra chapter chrome obscuring products on smaller screens. */
-@media (max-width: 1180px) {
+@media (max-width: 1500px) {
+  /* On laptops the chapter rail would overlap archive text and silk cards. */
   .chapter-nav { display: none; }
 }
 @media (max-width: 800px) {
