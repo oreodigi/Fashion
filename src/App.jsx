@@ -56,8 +56,41 @@ function useVisibleAutoplay(active, delay, onTick) {
  },[active,delay]);
 }
 
+// Native finger swipe: horizontal movement changes a card while vertical
+// movement remains available for scrolling the page. No scroll-jacking.
+function useSwipe(onSwipe) {
+ const start=useRef(null);
+ const lastSwipe=useRef(0);
+ const callback=useRef(onSwipe);
+ callback.current=onSwipe;
+ return {
+   handlers:{
+     onTouchStart:event=>{
+       const touch=event.touches[0];
+       if(touch)start.current={x:touch.clientX,y:touch.clientY};
+     },
+     onTouchEnd:event=>{
+       const begin=start.current;
+       start.current=null;
+       const touch=event.changedTouches[0];
+       if(!begin || !touch)return;
+       const dx=touch.clientX-begin.x;
+       const dy=touch.clientY-begin.y;
+       if(Math.abs(dx)<42 || Math.abs(dx)<Math.abs(dy)*1.25)return;
+       lastSwipe.current=Date.now();
+       callback.current(dx<0?1:-1);
+     },
+     onTouchCancel:()=>{start.current=null;}
+   },
+   wasJustSwiped:()=>Date.now()-lastSwipe.current<450,
+ };
+}
+
 export default function App() {
  const siteRef=useRef(null);
+ // The parent ref is attached after child layout effects in React.
+ // Mount GSAP only after this parent has committed its DOM reference.
+ const [motionReady,setMotionReady]=useState(false);
  const silkScrollRef=useRef(null);
  const rackViewportRef=useRef(null);
  const [activeChapter,setActiveChapter]=useState('home');
@@ -86,6 +119,7 @@ export default function App() {
  const [bridalIndex,setBridalIndex]=useState(1);
  const [visitOpen,setVisitOpen]=useState(false);
  const [reelOn,setReelOn]=useState(false);
+ useEffect(()=>{setMotionReady(Boolean(siteRef.current));},[]);
  useEffect(()=>{localStorage.setItem('noolam-cart',JSON.stringify(cart));},[cart]);
  useEffect(()=>{localStorage.setItem('noolam-wishlist',JSON.stringify(wishlist));},[wishlist]);
  useEffect(()=>{
@@ -192,8 +226,12 @@ export default function App() {
  const goTo=id=>{setMenuOpen(false);document.getElementById(id)?.scrollIntoView({behavior:'smooth'});};
  const prevLook=()=>{pauseSection('looks');setActiveLook(i=>(i+7)%8);};
  const nextLook=()=>{pauseSection('looks');setActiveLook(i=>(i+1)%8);};
+ const lookSwipe=useSwipe(direction=>{pauseSection('looks');setActiveLook(i=>(i+direction+8)%8);});
+ const reelSwipe=useSwipe(direction=>{pauseSection('reels');setReelIndex(i=>(i+direction+reels.length)%reels.length);});
+ const bridalSwipe=useSwipe(direction=>{pauseSection('bridal');setBridalIndex(i=>(i+direction+bridal.length)%bridal.length);});
+ const museSwipe=useSwipe(direction=>{setFilmOn(false);setFilmFrame(i=>(i+direction+filmImages.length)%filmImages.length);});
  return <div className="site" ref={siteRef}>
-   <MotionDirector rootRef={siteRef} onChapterChange={setActiveChapter}/>
+   {motionReady && <MotionDirector rootRef={siteRef} onChapterChange={setActiveChapter}/>}
    <div className="reading-thread" aria-hidden="true"><span className="reading-thread__bar"/></div>
    <nav className="chapter-nav" aria-label="Explore showcase chapters">{storyChapters.map(([number,id,label])=><button key={id} type="button" className={activeChapter===id?'is-current':''} aria-current={activeChapter===id?'location':undefined} aria-label={`Go to ${label}`} onClick={()=>goTo(id)}><span className="chapter-nav__label">{label}</span><span className="chapter-nav__number">{number}</span><span className="chapter-nav__dot"/></button>)}</nav>
    <header className={`site-header ${scrolled?'is-scrolled':''}`}>
@@ -242,10 +280,10 @@ export default function App() {
       <div className="section-container">
        <div className="looks-header reveal"><SectionTag>STYLED HEAD TO TOE</SectionTag><h2 className="display-heading">Try the <em>Look.</em></h2><p>Eight looks. Infinite ways to wear silk. Choose a muse to explore the pieces.</p></div>
        <div className="look-layout">
-        <div className="look-stage reveal">
+        <div className="look-stage reveal swipe-surface" {...lookSwipe.handlers} aria-label="Swipe left or right to change the outfit">
          <div className="look-stage-watermark">N</div>
-         {[(-1),0,1].map(offset=>{const pos=(activeLook+offset+8)%8;return <button key={offset} className={`look-model look-${offset===0?'center':offset<0?'left':'right'}`} onClick={()=>offset<0?prevLook():offset>0?nextLook():openDetail(products[pos])} aria-label={offset===0?'View current look':'Select adjacent look'}><ProductImage key={pos} product={products[pos]} width={760}/></button>;})}
-         <div className="look-stage-bottom"><span><b>0{activeLook+1}</b> / 08 &nbsp; · &nbsp; {currentLook.name}</span><div><IconButton label="Previous look" onClick={prevLook}><ArrowLeft size={20}/></IconButton><IconButton label="Next look" onClick={nextLook}><ArrowRight size={20}/></IconButton></div></div>
+         {[(-1),0,1].map(offset=>{const pos=(activeLook+offset+8)%8;return <button key={offset} className={`look-model look-${offset===0?'center':offset<0?'left':'right'}`} onClick={()=>{if(lookSwipe.wasJustSwiped())return;offset<0?prevLook():offset>0?nextLook():openDetail(products[pos]);}} aria-label={offset===0?'View current look':'Select adjacent look'}><ProductImage key={pos} product={products[pos]} width={760}/></button>;})}
+         <div className="look-stage-bottom"><span><b>0{activeLook+1}</b> / 08 &nbsp; · &nbsp; {currentLook.name}</span><span className="touch-swipe-hint">Swipe to change look ↔</span><div><IconButton label="Previous look" onClick={prevLook}><ArrowLeft size={20}/></IconButton><IconButton label="Next look" onClick={nextLook}><ArrowRight size={20}/></IconButton></div></div>
         </div>
         <aside className="look-panel reveal"><div className="look-panel-top"><span>THE COMPLETE ENSEMBLE</span><span className="look-number">LOOK 0{activeLook+1}</span></div><h3>In this <em>look.</em></h3>
          <div className="look-items">
@@ -280,7 +318,7 @@ export default function App() {
        <div className="muse-heading reveal"><SectionTag>BEYOND THE WEAVE</SectionTag><h2 className="display-heading">Feel the <em>drape.</em></h2><p>A little movement. A lifetime of stories.</p></div>
        <div className="muse-content">
         <div className="muse-photos muse-photos-left">{[products[4],products[1],products[7]].map(p=><ProductImage key={p.id} product={p} width={380}/>)}</div>
-        <div className="film-frame reveal"><div className="film-corners"></div><div className="film-image-wrap"><img key={filmFrame} src={img(filmImages[filmFrame].image,1000)} alt="NOOLAM motion lookbook sequence" className="film-image"/><div className="film-vignette"></div><div className="film-center"><span>NOOLAM PRESENTS</span><strong>THE ART OF<br/><em>BEING TIMELESS</em></strong><span>A MOTION LOOKBOOK</span></div><button className="film-play" onClick={()=>setFilmOn(p=>!p)} aria-label={filmOn?'Pause motion lookbook':'Play motion lookbook'}>{filmOn?<Pause fill="currentColor" size={22}/>:<Play fill="currentColor" size={22}/>}</button></div><div className="film-controls"><span>VISUAL STORY · NO SOUND</span><span>0{filmFrame+1} / 04</span></div><div className="film-progress">{[0,1,2,3].map(i=><button key={i} onClick={()=>{setFilmFrame(i);setFilmOn(false);}} className={i===filmFrame?'active':''} aria-label={`Show film scene ${i+1}`}></button>)}</div></div>
+        <div className="film-frame reveal"><div className="film-corners"></div><div className="film-image-wrap swipe-surface" {...museSwipe.handlers}><img key={filmFrame} src={img(filmImages[filmFrame].image,1000)} alt="NOOLAM motion lookbook sequence" className="film-image"/><div className="film-vignette"></div><div className="film-center"><span>NOOLAM PRESENTS</span><strong>THE ART OF<br/><em>BEING TIMELESS</em></strong><span>A MOTION LOOKBOOK</span></div><button className="film-play" onClick={()=>setFilmOn(p=>!p)} aria-label={filmOn?'Pause motion lookbook':'Play motion lookbook'}>{filmOn?<Pause fill="currentColor" size={22}/>:<Play fill="currentColor" size={22}/>}</button></div><div className="film-controls"><span>VISUAL STORY · NO SOUND</span><span>0{filmFrame+1} / 04</span></div><div className="film-progress">{[0,1,2,3].map(i=><button key={i} onClick={()=>{setFilmFrame(i);setFilmOn(false);}} className={i===filmFrame?'active':''} aria-label={`Show film scene ${i+1}`}></button>)}</div></div>
         <div className="muse-photos muse-photos-right">{[products[2],products[9],products[0]].map(p=><ProductImage key={p.id} product={p} width={380}/>)}</div>
        </div>
        <div className="muse-bottom"><button className="btn btn-maroon" onClick={()=>goTo('rack')}>Explore the collection <ArrowUpRight size={18}/></button><span>IMAGE-LED MOTION SHOWCASE</span></div>
@@ -290,16 +328,16 @@ export default function App() {
     <section id="reels" className="section reels" onPointerDown={()=>pauseSection('reels')} onFocusCapture={()=>pauseSection('reels')}>
       <div className="section-container">
        <div className="reels-head reveal"><div><SectionTag>THE MOVING MUSE</SectionTag><h2 className="display-heading">Silk, <em>in motion.</em></h2></div><div className="reel-buttons"><IconButton label="Previous reel" onClick={()=>setReelIndex(i=>(i+4)%5)}><ChevronLeft size={21}/></IconButton><IconButton label="Next reel" onClick={()=>setReelIndex(i=>(i+1)%5)}><ChevronRight size={21}/></IconButton></div></div>
-       <div className="reel-arc">{reels.map((p,i)=>{let dif=i-reelIndex;if(dif>2)dif-=5;if(dif< -2)dif+=5;return <button key={p.id} className={`reel-card ${dif===0?'reel-active':''}`} style={{'--dx':dif,'--abs':Math.abs(dif)}} onClick={()=>{if(dif===0){setReelOpen(true);setReelOn(true);}else setReelIndex(i);}} aria-label={dif===0?`Open ${p.name} visual reel`:`Select ${p.name} reel`}><ProductImage product={p} width={600}/><span className="reel-shade"></span><span className="reel-number">0{i+1} / 05</span>{dif===0&&<span className="reel-play"><Play size={22} fill="currentColor"/></span>}<span className="reel-info"><small>THE NOOLAM EDIT</small><strong>{p.name}</strong><span>INDIA · SILK STORY</span></span></button>})}</div>
-       <p className="reel-note"><MoveHorizontal size={16}/> SELECT A CARD TO EXPLORE THE EDITORIAL REEL</p>
+       <div className="reel-arc swipe-surface" {...reelSwipe.handlers} aria-label="Swipe left or right through fashion reels">{reels.map((p,i)=>{let dif=i-reelIndex;if(dif>2)dif-=5;if(dif< -2)dif+=5;return <button key={p.id} className={`reel-card ${dif===0?'reel-active':''}`} style={{'--dx':dif,'--abs':Math.abs(dif)}} onClick={()=>{if(reelSwipe.wasJustSwiped())return;pauseSection('reels');if(dif===0){setReelOpen(true);setReelOn(true);}else setReelIndex(i);}} aria-label={dif===0?`Open ${p.name} visual reel`:`Select ${p.name} reel`}><ProductImage product={p} width={600}/><span className="reel-shade"></span><span className="reel-number">0{i+1} / 05</span>{dif===0&&<span className="reel-play"><Play size={22} fill="currentColor"/></span>}<span className="reel-info"><small>THE NOOLAM EDIT</small><strong>{p.name}</strong><span>INDIA · SILK STORY</span></span></button>})}</div>
+       <p className="reel-note"><MoveHorizontal size={16}/> <span className="desktop-reel-note">SELECT A CARD TO EXPLORE THE EDITORIAL REEL</span><span className="mobile-reel-note">SWIPE LEFT OR RIGHT TO EXPLORE THE REELS</span></p>
       </div>
     </section>
 
     <section id="bridal" className="section bridal" onPointerDown={()=>pauseSection('bridal')} onFocusCapture={()=>pauseSection('bridal')}>
       <div className="section-container">
        <div className="bridal-head reveal"><SectionTag>FOR EVERY VOW</SectionTag><h2 className="display-heading">The Bridal <em>Collection.</em></h2><p>For the muhurtham and every beautiful promise after.</p></div>
-       <div className="bridal-carousel">{bridal.map((p,i)=>{let diff=i-bridalIndex;return <button key={p.id} className={`bridal-card ${diff===0?'bridal-focus':''}`} style={{'--position':diff}} onClick={()=>setBridalIndex(i)} aria-label={`View bridal design ${p.name}`}><span className="bridal-photo"><ProductImage product={p} width={750}/></span><span className="bridal-number">NOOLAM BRIDAL / 0{i+1}</span></button>;})}</div>
-       <div className="bridal-info"><div className="bridal-control"><IconButton label="Previous bridal saree" onClick={()=>setBridalIndex(i=>(i+bridal.length-1)%bridal.length)}><ArrowLeft size={20}/></IconButton><span>0{bridalIndex+1} <small>/ 0{bridal.length}</small></span><IconButton label="Next bridal saree" onClick={()=>setBridalIndex(i=>(i+1)%bridal.length)}><ArrowRight size={20}/></IconButton></div><div className="bridal-description"><span>THE HEIRLOOM EDIT</span><h3>{bridal[bridalIndex].name}</h3><p>{bridal[bridalIndex].fabric}</p><strong>{money(bridal[bridalIndex].price)}</strong></div><div className="bridal-actions"><button className="btn btn-maroon" onClick={()=>addToBag(bridal[bridalIndex])}>Add to bag <ArrowUpRight size={18}/></button><IconButton label="Save bridal saree" onClick={()=>toggleWish(bridal[bridalIndex].id)}><Heart size={19} fill={wishlist.includes(bridal[bridalIndex].id)?'currentColor':'none'}/></IconButton></div></div>
+       <div className="bridal-carousel swipe-surface" {...bridalSwipe.handlers} aria-label="Swipe left or right through bridal sarees">{bridal.map((p,i)=>{let diff=i-bridalIndex;return <button key={p.id} className={`bridal-card ${diff===0?'bridal-focus':''}`} style={{'--position':diff}} onClick={()=>{if(bridalSwipe.wasJustSwiped())return;pauseSection('bridal');setBridalIndex(i);}} aria-label={`View bridal design ${p.name}`}><span className="bridal-photo"><ProductImage product={p} width={750}/></span><span className="bridal-number">NOOLAM BRIDAL / 0{i+1}</span></button>;})}</div>
+       <p className="bridal-swipe-note">Swipe to explore the bridal collection ↔</p><div className="bridal-info"><div className="bridal-control"><IconButton label="Previous bridal saree" onClick={()=>setBridalIndex(i=>(i+bridal.length-1)%bridal.length)}><ArrowLeft size={20}/></IconButton><span>0{bridalIndex+1} <small>/ 0{bridal.length}</small></span><IconButton label="Next bridal saree" onClick={()=>setBridalIndex(i=>(i+1)%bridal.length)}><ArrowRight size={20}/></IconButton></div><div className="bridal-description"><span>THE HEIRLOOM EDIT</span><h3>{bridal[bridalIndex].name}</h3><p>{bridal[bridalIndex].fabric}</p><strong>{money(bridal[bridalIndex].price)}</strong></div><div className="bridal-actions"><button className="btn btn-maroon" onClick={()=>addToBag(bridal[bridalIndex])}>Add to bag <ArrowUpRight size={18}/></button><IconButton label="Save bridal saree" onClick={()=>toggleWish(bridal[bridalIndex].id)}><Heart size={19} fill={wishlist.includes(bridal[bridalIndex].id)?'currentColor':'none'}/></IconButton></div></div>
       </div>
     </section>
 
