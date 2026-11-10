@@ -147,7 +147,7 @@ export default function App() {
        <div className="look-layout">
         <div className="look-stage reveal">
          <div className="look-stage-watermark">N</div>
-         {[(-1),0,1].map(offset=>{const pos=(activeLook+offset+8)%8;return <button key={offset} className={`look-model look-${offset===0?'center':offset<0?'left':'right'}`} onClick={()=>offset<0?prevLook():offset>0?nextLook():openDetail(products[pos])} aria-label={offset===0?'View current look':'Select adjacent look'}><ProductImage product={products[pos]} width={760}/></button>;})}
+         {[(-1),0,1].map(offset=>{const pos=(activeLook+offset+8)%8;return <button key={offset} className={`look-model look-${offset===0?'center':offset<0?'left':'right'}`} onClick={()=>offset<0?prevLook():offset>0?nextLook():openDetail(products[pos])} aria-label={offset===0?'View current look':'Select adjacent look'}><ProductImage key={pos} product={products[pos]} width={760}/></button>;})}
          <div className="look-stage-bottom"><span><b>0{activeLook+1}</b> / 08 &nbsp; · &nbsp; {currentLook.name}</span><div><IconButton label="Previous look" onClick={prevLook}><ArrowLeft size={20}/></IconButton><IconButton label="Next look" onClick={nextLook}><ArrowRight size={20}/></IconButton></div></div>
         </div>
         <aside className="look-panel reveal"><div className="look-panel-top"><span>THE COMPLETE ENSEMBLE</span><span className="look-number">LOOK 0{activeLook+1}</span></div><h3>In this <em>look.</em></h3>
