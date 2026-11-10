@@ -268,3 +268,48 @@
   .ticker-track { animation: none !important; }
   .muse-photos img { animation: none !important; }
 }
+
+
+/* Automatic, viewport-aware collection playback. Each collection moves through
+   different models/fabrics; a manual selection hands control to the visitor. */
+.autoplay-toggle{
+  width:36px;height:36px;flex:none;display:grid;place-items:center;
+  padding:0;border:1px solid #ffffff42;border-radius:50%;
+  color:#f4d3a5;background:#ffffff0c;
+  transition:background .2s,transform .2s,color .2s;
+}
+.autoplay-toggle:hover,.autoplay-toggle:focus-visible{
+  background:#d9b97b27;color:#fff;
+}
+.autoplay-toggle:active{transform:scale(.91)}
+.autoplay-toggle[aria-pressed="false"]{color:#ffffffb2;background:#ffffff14}
+
+.mood-card.is-auto-featured .mood-arch{
+  box-shadow:0 16px 32px #8a522c42,0 0 0 2px #dfbb7d,0 0 28px #cda57056;
+  filter:saturate(1.14) brightness(1.05);
+}
+.mood-card.is-auto-featured .arch-finial{
+  color:#e2b774;transform:translate(-50%,-5px);
+}
+.mood-card .mood-arch { transition:box-shadow .55s,filter .55s; }
+.rack-item.is-auto-featured .rack-garment{
+  transform:translateY(-11px) scale(1.045);
+  filter:brightness(1.13) saturate(1.14);
+  box-shadow:0 20px 26px #3b26113f;
+}
+.rack-item.is-auto-featured .rack-item-name{color:#7e2b3e}
+.rack-item.is-auto-featured .hanger-shoulders{transform:rotate(3deg)}
+.rack-garment{transition:transform .55s ease,filter .55s ease,box-shadow .55s ease}
+.silk-scroll{scroll-behavior:smooth}
+.rack-viewport{scroll-behavior:smooth}
+@media(max-width:560px){
+  .autoplay-toggle{width:32px;height:32px}
+  .nav-actions{gap:2px}
+}
+@media(prefers-reduced-motion:reduce){
+  .mood-card.is-auto-featured .mood-arch,
+  .rack-item.is-auto-featured .rack-garment{
+    filter:none;box-shadow:none;transform:none!important;
+  }
+  .silk-scroll,.rack-viewport{scroll-behavior:auto}
+}
