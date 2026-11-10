@@ -2,39 +2,55 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import MotionDirector from './MotionDirector.jsx';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, Heart, Instagram, MapPin, Menu, Minus, MoveHorizontal, Pause, Play, Plus, ShoppingBag, Sparkles, X } from 'lucide-react';
 
-const img = (id, width = 900) => String(id).startsWith('u:')
-  ? `https://images.unsplash.com/photo-${String(id).slice(2)}?auto=format&fit=crop&w=${width}&q=82`
-  : `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
+// Verified Pexels photography is self-hosted as compact WebP assets.
+const localImages = new Set([28943610,37597721,33608805,36523508,29172772,24650534,31232391,35108807,28058182,15181110,37597037,28044200,35108853,35108770,35212993,28058207,19119326,14664844,26587818,37597739,29478717,35108804,40837810,31957369,35108820,28058263,6786973,37706758,35212992,7589447,28135779]);
+const img = (id, width = 900) => localImages.has(Number(id))
+  ? `/fashion/images/${id}.webp`
+  : String(id).startsWith('u:')
+    ? `https://images.unsplash.com/photo-${String(id).slice(2)}?auto=format&fit=crop&w=${width}&q=82`
+    : `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
 const money = amount => '₹' + amount.toLocaleString('en-IN');
 const products = [
-  { id:'kanchi-rani', name:'Kanchi Rani', subtitle:'Sunlit Kanchipuram silk', price:32400, category:'Silk Sarees', fabric:'Pure Kanchipuram Silk', color:'#8d2d26', image:28943610 },
-  { id:'temple-bloom', name:'Temple Bloom', subtitle:'The bridal classic', price:58900, category:'Zari & Brocade', fabric:'Pure zari · Bridal edit', color:'#a73125', image:37597721 },
-  { id:'rose-muhurtham', name:'Rose Muhurtham', subtitle:'A vow in vermilion', price:46800, category:'Silk Sarees', fabric:'Kanchipuram soft silk', color:'#b64c35', image:33608805 },
-  { id:'ivory-mist', name:'Ivory Mist', subtitle:'A modern heirloom', price:22900, category:'Half Sarees', fabric:'Tissue and silk blend', color:'#b29a87', image:35108820 },
-  { id:'midnight-zari', name:'Midnight Zari', subtitle:'After-dark elegance', price:28100, category:'Blouses', fabric:'Hand-finished brocade', color:'#4c3435', image:29172772 },
-  { id:'meher', name:'Meher Heritage', subtitle:'A classic reimagined', price:36900, category:'Checked Sarees', fabric:'Handwoven silk', color:'#3c6859', image:24650534 },
-  { id:'royal-vermillion', name:'Royal Vermillion', subtitle:'The wedding heirloom', price:62500, category:'Zari & Brocade', fabric:'Antique zari weaving', color:'#8a2523', image:7544528 },
-  { id:'gulabi', name:'Gulabi Glow', subtitle:'The festive hour', price:26800, category:'Half Sarees', fabric:'Contemporary occasion silk', color:'#ac566c', image:'u:1617627143750-d86bc21e42bb' },
-  { id:'violet-arch', name:'Violet Arch', subtitle:'An evening in silk', price:29900, category:'Silk Sarees', fabric:'Silk with woven gold border', color:'#482951', image:'u:1610030469983-98e550d6193c' },
-  { id:'royal-amber', name:'Royal Amber', subtitle:'Heritage bridal story', price:54400, category:'Zari & Brocade', fabric:'Art silk · Studio collection', color:'#a14b36', image:18556232 },
-  { id:'timeless-ruby', name:'Timeless Ruby', subtitle:'An heirloom in bloom', price:43600, category:'Silk Sarees', fabric:'Embroidered ceremonial silk', color:'#82313c', image:36519701 },
-  { id:'golden-hour', name:'Golden Hour', subtitle:'A glimpse of zari', price:21800, category:'Checked Sarees', fabric:'Banarasi-inspired weave', color:'#ad704e', image:37706758 },
+  { id:"kanchi-rani", name:"Kanchi Rani", subtitle:"Sunlit orange heritage silk", price:32400, category:"Silk Sarees", fabric:"Kanchipuram-inspired silk", color:"#c5794e", image:28943610 },
+  { id:"temple-bloom", name:"Temple Bloom", subtitle:"The red bridal edit", price:58900, category:"Zari & Brocade", fabric:"Wedding zari drape", color:"#9f3129", image:37597721 },
+  { id:"rose-muhurtham", name:"Rose Muhurtham", subtitle:"Tradition in vermilion", price:46800, category:"Silk Sarees", fabric:"Ceremonial silk", color:"#c95b36", image:33608805 },
+  { id:"ivory-mist", name:"Ivory Mist", subtitle:"A pastel heirloom", price:22900, category:"Half Sarees", fabric:"Soft pastel silk", color:"#d2b2ab", image:36523508 },
+  { id:"midnight-zari", name:"Midnight Zari", subtitle:"Black silk after dark", price:28100, category:"Blouses", fabric:"Statement blouse and saree", color:"#252023", image:29172772 },
+  { id:"meher", name:"Meher Heritage", subtitle:"White and green zari", price:36900, category:"Checked Sarees", fabric:"Traditional zari silk", color:"#64795f", image:24650534 },
+  { id:"royal-vermillion", name:"Royal Vermillion", subtitle:"A wedding heirloom", price:62500, category:"Zari & Brocade", fabric:"Bridal silk inspiration", color:"#952f2b", image:31232391 },
+  { id:"gulabi", name:"Gulabi Glow", subtitle:"A rose-pink celebration", price:26800, category:"Half Sarees", fabric:"Pink occasion silk", color:"#c58b9f", image:35108807 },
+  { id:"violet-arch", name:"Violet Arch", subtitle:"An evening in lavender", price:29900, category:"Silk Sarees", fabric:"Lavender draped silk", color:"#765b95", image:28058182 },
+  { id:"royal-amber", name:"Royal Amber", subtitle:"Golden bridal moments", price:54400, category:"Zari & Brocade", fabric:"Warm gold silk", color:"#d99c48", image:15181110 },
+  { id:"timeless-ruby", name:"Timeless Ruby", subtitle:"Crimson wedding traditions", price:43600, category:"Silk Sarees", fabric:"Festive red silk", color:"#a02c31", image:37597037 },
+  { id:"golden-hour", name:"Golden Hour", subtitle:"Subtle blush zari", price:21800, category:"Checked Sarees", fabric:"Pastel zari weave", color:"#ca9e83", image:28044200 },
+  { id:"mint-jasmine", name:"Mint Jasmine", subtitle:"Mint silk and rose zari", price:34200, category:"Silk Sarees", fabric:"Mint and blush silk", color:"#7bb3ad", image:35108853 },
+  { id:"emerald-temple", name:"Emerald Temple", subtitle:"The green bridal story", price:38900, category:"Checked Sarees", fabric:"Green ceremonial silk", color:"#517458", image:35212993 },
+  { id:"lavender-mist", name:"Lavender Mist", subtitle:"Lavender silk in bloom", price:26400, category:"Half Sarees", fabric:"Soft violet silk", color:"#a08aac", image:28058207 },
+  { id:"indigo-raga", name:"Indigo Raga", subtitle:"A midnight-blue drape", price:32500, category:"Silk Sarees", fabric:"Deep blue festive saree", color:"#365173", image:19119326 },
+  { id:"sindoor-stories", name:"Sindoor Stories", subtitle:"Red and ivory traditions", price:47900, category:"Zari & Brocade", fabric:"Red border heritage silk", color:"#bc5a4f", image:14664844 },
+  { id:"peacock-drape", name:"Peacock Drape", subtitle:"Teal with embroidered blouse", price:34900, category:"Silk Sarees", fabric:"Peacock blue occasion silk", color:"#317b78", image:26587818 },
+  { id:"garden-vermillion", name:"Garden Vermillion", subtitle:"A garden wedding edit", price:53500, category:"Zari & Brocade", fabric:"Red bridal silk", color:"#a13731", image:37597739 },
+  { id:"rose-gold-katha", name:"Rose Gold Katha", subtitle:"Soft pink with festive zari", price:29800, category:"Silk Sarees", fabric:"Pink and ivory saree", color:"#bb8f92", image:29478717 },
+  { id:"lotus-pink", name:"Lotus Pink", subtitle:"A pink blouse-and-saree look", price:25700, category:"Blouses", fabric:"Silk blouse styling", color:"#d6a4b1", image:35108804 },
+  { id:"mauve-heirloom", name:"Mauve Heirloom", subtitle:"A romantic festive drape", price:29600, category:"Half Sarees", fabric:"Mauve soft silk", color:"#917d91", image:31957369 },
+  { id:"pearl-blush", name:"Pearl Blush", subtitle:"Understated pink satin-silk", price:31900, category:"Silk Sarees", fabric:"Blush silk", color:"#bb9c9e", image:35108820 },
+  { id:"amethyst-dusk", name:"Amethyst Dusk", subtitle:"Deep purple silk story", price:32200, category:"Silk Sarees", fabric:"Amethyst purple drape", color:"#754f79", image:28058263 },
 ];
 const moods = [
   ['The Wedding Edit',37597721],['Kanchipuram Icons',28943610],['Banarasi Heirlooms',24650534],
-  ['Festive Radiance','u:1617627143750-d86bc21e42bb'],['Zari Signatures',36519701],['The Bridal Edit',33608805],
+  ['Festive Radiance',35108807],['Zari Signatures',35212993],['The Bridal Edit',31232391],
 ];
 const silkCards = [
   {id:'violet-arch',label:'VIOLET ARCH',bg:'#6b2c86'},
-  {id:'meher',label:'PALACE CHECK',bg:'#ac2948'},
+  {id:'peacock-drape',label:'PEACOCK SILK',bg:'#276f6e'},
   {id:'kanchi-rani',label:'KANCHI RANI',bg:'#d79b47'},
   {id:'rose-muhurtham',label:'ROSE GARDEN',bg:'#a42441'},
-  {id:'royal-vermillion',label:'THE ROYAL',bg:'#c29a36'},
-  {id:'gulabi',label:'GULABI SILK',bg:'#497d66'},
+  {id:'royal-vermillion',label:'THE ROYAL',bg:'#a57429'},
+  {id:'mint-jasmine',label:'MINT JASMINE',bg:'#497d66'},
 ];
 const filters = ['All pieces','Silk Sarees','Half Sarees','Blouses','Checked Sarees','Zari & Brocade'];
-const links = [['Home','home'],['Try the Look','looks'],['Pick a Silk','pick'],['The Rack','rack'],['The Muse','muse'],['Bridal','bridal']];
-const storyChapters = [['01','home','Prologue'],['02','archive','The Archive'],['03','looks','Try the Look'],['04','pick','Pick a Silk'],['05','rack','The Rail'],['06','muse','The Muse'],['07','reels','Silk in Motion'],['08','bridal','Bridal']];
+const links = [['Home','home'],['Try the Look','looks'],['Pick a Silk','pick'],['The Rack','rack'],['Gallery','gallery'],['The Muse','muse'],['Bridal','bridal']];
+const storyChapters = [['01','home','Prologue'],['02','archive','The Archive'],['03','looks','Try the Look'],['04','pick','Pick a Silk'],['05','rack','The Rail'],['06','gallery','The Gallery'],['07','muse','The Muse'],['08','reels','Silk in Motion'],['09','bridal','Bridal']];
 const savedRead = key => {try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }};
 
 function Mark({ small=false }) {
@@ -170,9 +186,10 @@ export default function App() {
  const currentLook=products[activeLook];
  const lookBundle=currentLook.price+15400;
  const railProducts=rackFilter==='All pieces'?products:products.filter(p=>p.category===rackFilter);
- const bridal=[products[1],products[6],products[9],products[10],products[2]];
- const reels=[products[3],products[2],products[0],products[7],products[1]];
- const filmImages=[products[0],products[2],products[1],products[7]];
+ const bridal=[products[1],products[6],products[9],products[10],products[18]];
+ const reels=[products[17],products[15],products[19],products[14],products[21]];
+ const filmImages=[products[12],products[16],products[20],products[23]];
+ const galleryProducts=[products[13],products[14],products[16],products[19],products[17],products[22],products[23],products[21]];
  const pauseSection=id=>setManualSections(previous=>previous[id]?previous:{...previous,[id]:true});
  const toggleAutoplay=()=>{
    if(!autoplayEnabled)setManualSections({});
@@ -324,9 +341,45 @@ export default function App() {
      <div className="section-container">
       <div className="rack-heading reveal"><SectionTag>THE COLLECTION</SectionTag><h2 className="display-heading">Every silk, <em>on the rail.</em></h2><p>Come closer. Discover the details, the drape and the story behind each piece.</p></div>
       <div className="rack-filters reveal">{filters.map(f=><button key={f} onClick={()=>{pauseSection('rack');setRackFilter(f);setActiveRack(0);}} className={rackFilter===f?'active':''}>{f}<span>{f==='All pieces'?products.length:products.filter(p=>p.category===f).length}</span></button>)}</div>
-      <div className="rack-viewport" ref={rackViewportRef} onTouchStart={event=>{rackSwipeOriginRef.current=rackViewportRef.current?.scrollLeft??0;rackSwipe.handlers.onTouchStart(event);}} onTouchEnd={rackSwipe.handlers.onTouchEnd} onTouchCancel={rackSwipe.handlers.onTouchCancel}><div className="rack-rod"></div><div className="rack-list">{railProducts.map((p,i)=><button key={p.id} className={`rack-item ${i===activeRack && canAutoplay && visibleSections.rack && !manualSections.rack?'is-auto-featured':''}`} onClick={()=>openDetail(p)} aria-label={`View details of ${p.name}`}><span className="hanger-hook"></span><span className="hanger-shoulders"></span><span className="rack-garment" style={{'--fabric':p.color}}><span className="fabric-pleats"></span><span className="fabric-zari"></span></span><span className="rack-item-name">{p.name}</span><span className="rack-item-price">{money(p.price)}</span></button>)}</div></div>
+      <div className="rack-viewport rack-photo-gallery" ref={rackViewportRef} onTouchStart={event=>{rackSwipeOriginRef.current=rackViewportRef.current?.scrollLeft??0;rackSwipe.handlers.onTouchStart(event);}} onTouchEnd={rackSwipe.handlers.onTouchEnd} onTouchCancel={rackSwipe.handlers.onTouchCancel}>
+        <div className="rack-list rack-photo-list">{railProducts.map((p,i)=>
+          <button key={p.id} className={`rack-item rack-photo-item ${i===activeRack && canAutoplay && visibleSections.rack && !manualSections.rack?'is-auto-featured':''}`} onClick={()=>openDetail(p)} aria-label={`View real saree photograph of ${p.name}`}>
+            <span className="rack-photo-frame">
+              <ProductImage product={p} width={680}/>
+              <span className="rack-photo-index">NOOLAM / {String(i+1).padStart(2,'0')}</span>
+              <span className="rack-photo-cta">Explore the drape <ArrowUpRight size={17}/></span>
+            </span>
+            <span className="rack-item-name">{p.name}</span>
+            <span className="rack-item-detail">{p.fabric}</span>
+            <span className="rack-item-price">{money(p.price)}</span>
+          </button>
+        )}</div>
+      </div>
       <div className="rack-bottom"><span>EXPLORE THE COLLECTION · {railProducts.length} PIECES</span><span>SELECT ANY PIECE TO VIEW DETAILS <ArrowUpRight size={14}/></span></div>
      </div>
+    </section>
+
+    <section id="gallery" className="section gallery">
+      <div className="section-container">
+        <div className="gallery-heading reveal">
+          <div><SectionTag>THE EDITORIAL COLLECTION</SectionTag><h2 className="display-heading">Silk, in <em>every shade.</em></h2></div>
+          <p>More than a drape. A moment, a mood, a story.<br/>Explore the colours and craftsmanship that inspire us.</p>
+        </div>
+        <div className="gallery-grid">
+          {galleryProducts.map((p,i)=>
+            <button key={p.id} type="button" className={`gallery-tile gallery-tile-${i+1}`} onClick={()=>openDetail(p)} aria-label={`See ${p.name} saree photography`}>
+              <ProductImage product={p} width={760}/>
+              <span className="gallery-image-label">SILK STORY / {String(i+1).padStart(2,'0')}</span>
+              <span className="gallery-image-caption"><strong>{p.name}</strong><span>{p.fabric} <ArrowUpRight size={15}/></span></span>
+            </button>
+          )}
+        </div>
+        <div className="gallery-texture">
+          <img src={img(37706758,1000)} loading="lazy" alt="Close view of bronze-gold saree zari fabric" />
+          <div><SectionTag>THE BEAUTY IS IN THE DETAILS</SectionTag><h3>Every thread<br/><em>has a story.</em></h3><p>Discover drapes inspired by the richness of India's weaving traditions.</p><button className="btn btn-ivory" onClick={()=>goTo('rack')}>Browse the collection <ArrowUpRight size={17}/></button></div>
+        </div>
+        <p className="gallery-caption">Editorial photographs illustrate saree styles. Images are not photographs of merchandise held in inventory.</p>
+      </div>
     </section>
 
     <section id="muse" className="section muse">
@@ -335,7 +388,7 @@ export default function App() {
        <div className="muse-content">
         <div className="muse-photos muse-photos-left">{[products[4],products[1],products[7]].map(p=><ProductImage key={p.id} product={p} width={380}/>)}</div>
         <div className="film-frame reveal"><div className="film-corners"></div><div className="film-image-wrap swipe-surface" {...museSwipe.handlers}><img key={filmFrame} src={img(filmImages[filmFrame].image,1000)} alt="NOOLAM motion lookbook sequence" className="film-image"/><div className="film-vignette"></div><div className="film-center"><span>NOOLAM PRESENTS</span><strong>THE ART OF<br/><em>BEING TIMELESS</em></strong><span>A MOTION LOOKBOOK</span></div><button className="film-play" onClick={()=>setFilmOn(p=>!p)} aria-label={filmOn?'Pause motion lookbook':'Play motion lookbook'}>{filmOn?<Pause fill="currentColor" size={22}/>:<Play fill="currentColor" size={22}/>}</button></div><div className="film-controls"><span>VISUAL STORY · NO SOUND</span><span>0{filmFrame+1} / 04</span></div><div className="film-progress">{[0,1,2,3].map(i=><button key={i} onClick={()=>{setFilmFrame(i);setFilmOn(false);}} className={i===filmFrame?'active':''} aria-label={`Show film scene ${i+1}`}></button>)}</div></div>
-        <div className="muse-photos muse-photos-right">{[products[2],products[9],products[0]].map(p=><ProductImage key={p.id} product={p} width={380}/>)}</div>
+        <div className="muse-photos muse-photos-right">{[products[15],products[14],products[18]].map(p=><ProductImage key={p.id} product={p} width={380}/>)}</div>
        </div>
        <div className="muse-bottom"><button className="btn btn-maroon" onClick={()=>goTo('rack')}>Explore the collection <ArrowUpRight size={18}/></button><span>IMAGE-LED MOTION SHOWCASE</span></div>
       </div>
@@ -357,10 +410,10 @@ export default function App() {
       </div>
     </section>
 
-    <section className="closing"><div className="closing-symbol">✦</div><p>THE SILK WE CARRY, THE STORIES WE KEEP</p><h2>Some things are<br/><em>forever woven.</em></h2><button className="btn btn-gold" onClick={()=>goTo('archive')}>Explore the archive <ArrowUpRight size={18}/></button></section>
+    <section className="closing"><div className="closing-portrait closing-portrait-left"><img src={img(35108770,500)} alt="" loading="lazy"/></div><div className="closing-portrait closing-portrait-right"><img src={img(37597739,500)} alt="" loading="lazy"/></div><div className="closing-symbol">✦</div><p>THE SILK WE CARRY, THE STORIES WE KEEP</p><h2>Some things are<br/><em>forever woven.</em></h2><button className="btn btn-gold" onClick={()=>goTo('archive')}>Explore the archive <ArrowUpRight size={18}/></button></section>
    </main>
 
-   <footer className="footer"><div className="footer-top"><Mark/><p>Handwoven stories. Heirloom dreams.<br/>An editorial showcase of timeless Indian silk.</p><div className="footer-links"><button onClick={()=>goTo('archive')}>The Archive</button><button onClick={()=>goTo('rack')}>The Collection</button><button onClick={()=>goTo('bridal')}>The Bridal Edit</button></div></div><div className="footer-bottom"><span>© 2026 NOOLAM. DESIGN SHOWCASE.</span><span>MADE WITH LOVE FOR THE ART OF SILK</span><span>DEMO STORE · NO LIVE CHECKOUT</span></div></footer>
+   <footer className="footer"><div className="footer-top"><Mark/><p>Handwoven stories. Heirloom dreams.<br/>An editorial showcase of timeless Indian silk.</p><div className="footer-links"><button onClick={()=>goTo('archive')}>The Archive</button><button onClick={()=>goTo('rack')}>The Collection</button><button onClick={()=>goTo('bridal')}>The Bridal Edit</button></div></div><div className="footer-bottom"><span>© 2026 NOOLAM. DESIGN SHOWCASE.</span><span>MADE WITH LOVE FOR THE ART OF SILK</span><span>DEMO STORE · SAMPLE PHOTOGRAPHY <a className="photo-credit-link" href="/fashion/photo-credits.html" target="_blank" rel="noopener noreferrer">IMAGE CREDITS</a></span></div></footer>
 
    {toast&&<div className="toast" role="status"><Check size={17}/>{toast}</div>}
    {drawer&&<div className="overlay" onClick={()=>setDrawer('')}><aside className="drawer" role="dialog" aria-modal="true" aria-label={drawer==='bag'?'Shopping bag':'Wishlist'} onClick={e=>e.stopPropagation()}><div className="drawer-head"><div><SectionTag>YOUR NOOLAM EDIT</SectionTag><h2>{drawer==='bag'?'Your Bag':'Saved Silks'}</h2></div><IconButton label="Close drawer" onClick={()=>setDrawer('')}><X size={22}/></IconButton></div><div className="drawer-products">{(drawer==='bag'?cart:wishlistItems).length===0?<div className="empty-drawer"><Sparkles size={37}/><h3>Something beautiful awaits.</h3><p>{drawer==='bag'?'Your bag is empty. Start discovering a silk that speaks to you.':'No saved pieces yet. Tap the heart on any silk to add it here.'}</p><button className="btn btn-maroon" onClick={()=>{setDrawer('');goTo('rack');}}>Explore the silks <ArrowUpRight size={17}/></button></div>:(drawer==='bag'?cart:wishlistItems).map(p=><div className="drawer-line" key={p.id}><img src={img(p.image,220)} alt={p.name}/><div className="drawer-line-info"><strong>{p.name}</strong><span>{money(p.price)}</span>{drawer==='bag'?<div className="quantity"><button onClick={()=>changeQty(p.id,-1)} aria-label="Decrease quantity"><Minus size={15}/></button><b>{p.qty}</b><button onClick={()=>changeQty(p.id,1)} aria-label="Increase quantity"><Plus size={15}/></button></div>:<button className="text-action" onClick={()=>addToBag(p)}>Add to bag <ArrowRight size={14}/></button>}</div><IconButton label="Remove item" onClick={()=>drawer==='bag'?setCart(prev=>prev.filter(x=>x.id!==p.id)):toggleWish(p.id)}><X size={15}/></IconButton></div>)}</div>{drawer==='bag'&&cart.length>0&&<div className="drawer-checkout"><div><span>Subtotal</span><strong>{money(bagTotal)}</strong></div><p>Demonstration storefront — orders and payments are not enabled.</p><button className="btn btn-maroon btn-full" disabled>Checkout coming soon</button></div>}</aside></div>}
