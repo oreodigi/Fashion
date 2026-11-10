@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import MotionDirector from './MotionDirector.jsx';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronLeft, ChevronRight, Heart, Instagram, MapPin, Menu, Minus, MoveHorizontal, Pause, Play, Plus, ShoppingBag, Sparkles, X } from 'lucide-react';
 
 const img = (id, width = 900) => String(id).startsWith('u:')
@@ -33,6 +34,7 @@ const silkCards = [
 ];
 const filters = ['All pieces','Silk Sarees','Half Sarees','Blouses','Checked Sarees','Zari & Brocade'];
 const links = [['Home','home'],['Try the Look','looks'],['Pick a Silk','pick'],['The Rack','rack'],['The Muse','muse'],['Bridal','bridal']];
+const storyChapters = [['01','home','Prologue'],['02','archive','The Archive'],['03','looks','Try the Look'],['04','pick','Pick a Silk'],['05','rack','The Rail'],['06','muse','The Muse'],['07','reels','Silk in Motion'],['08','bridal','Bridal']];
 const savedRead = key => {try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }};
 
 function Mark({ small=false }) {
@@ -43,6 +45,8 @@ function SectionTag({children}) {return <div className="eyebrow"><span></span>{c
 function ProductImage({product,width=700,className=''}) {return <img className={className} src={img(product.image,width)} alt={product.name+' saree collection photograph'} loading="lazy" decoding="async" />;}
 
 export default function App() {
+ const siteRef=useRef(null);
+ const [activeChapter,setActiveChapter]=useState('home');
  const [scrolled,setScrolled]=useState(false);
  const [menuOpen,setMenuOpen]=useState(false);
  const [drawer,setDrawer]=useState('');
@@ -66,9 +70,7 @@ export default function App() {
  useEffect(()=>{
    const onScroll=()=>setScrolled(window.scrollY>40);
    window.addEventListener('scroll',onScroll,{passive:true});onScroll();
-   const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}}),{threshold:.08});
-   document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
-   return ()=>{window.removeEventListener('scroll',onScroll);observer.disconnect();};
+   return ()=>window.removeEventListener('scroll',onScroll);
  },[]);
  useEffect(()=>{if(!filmOn)return;const t=setInterval(()=>setFilmFrame(i=>(i+1)%4),3500);return ()=>clearInterval(t);},[filmOn]);
  useEffect(()=>{if(!reelOn || !reelOpen)return;const t=setInterval(()=>setReelIndex(i=>(i+1)%5),4000);return ()=>clearInterval(t);},[reelOn,reelOpen]);
@@ -94,7 +96,10 @@ export default function App() {
  const goTo=id=>{setMenuOpen(false);document.getElementById(id)?.scrollIntoView({behavior:'smooth'});};
  const prevLook=()=>setActiveLook(i=>(i+7)%8);
  const nextLook=()=>setActiveLook(i=>(i+1)%8);
- return <div className="site">
+ return <div className="site" ref={siteRef}>
+   <MotionDirector rootRef={siteRef} onChapterChange={setActiveChapter}/>
+   <div className="reading-thread" aria-hidden="true"><span className="reading-thread__bar"/></div>
+   <nav className="chapter-nav" aria-label="Explore showcase chapters">{storyChapters.map(([number,id,label])=><button key={id} type="button" className={activeChapter===id?'is-current':''} aria-current={activeChapter===id?'location':undefined} aria-label={`Go to ${label}`} onClick={()=>goTo(id)}><span className="chapter-nav__label">{label}</span><span className="chapter-nav__number">{number}</span><span className="chapter-nav__dot"/></button>)}</nav>
    <header className={`site-header ${scrolled?'is-scrolled':''}`}>
      <div className="nav-shell">
        <button className="brand-button" onClick={()=>goTo('home')} aria-label="NOOLAM home"><Mark /></button>
@@ -112,7 +117,7 @@ export default function App() {
 
    <main>
     <section id="home" className="hero">
-      <div className="hero-glow"></div>
+      <div className="hero-glow"></div><div className="hero-light-ray" aria-hidden="true"></div>
       <div className="hero-ornament ornament-one"></div><div className="hero-ornament ornament-two"></div>
       <div className="hero-media"><img src={img(28943610,1400)} alt="Model wearing a rich orange Kanchipuram silk saree" fetchPriority="high" /><div className="hero-photo-shade"></div></div>
       <div className="hero-body">
