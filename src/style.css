@@ -164,9 +164,11 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offse
 .rack-item:hover{transform:translateY(-13px) scale(1.025);z-index:4}
 .hanger-hook{position:relative;width:17px;height:24px;border:3px solid #947659;border-bottom:0;border-radius:60% 60% 0 0;transform:rotate(30deg);margin-top:-14px;z-index:4}
 .hanger-shoulders{position:relative;z-index:2;margin-top:-7px;width:116px;height:27px;background:linear-gradient(145deg,#c39b69,#8f603e);clip-path:polygon(49% 0%,55% 0%,100% 85%,96% 100%,4% 100%,0 85%);box-shadow:0 1px 4px #0005}
-.rack-garment{display:block;position:relative;width:143px;height:280px;margin-top:-2px;background:#e5d5c4;overflow:hidden;clip-path:polygon(5% 0,95% 0,100% 100%,0% 100%);box-shadow:0 14px 24px #3b26132b}
-.rack-garment img{height:100%;width:100%;object-fit:cover;object-position:center 30%;transition:transform .4s}
-.rack-item:hover img{transform:scale(1.09)}
+.rack-garment{display:block;position:relative;width:143px;height:280px;margin-top:-2px;background:repeating-linear-gradient(92deg,#ffffff10 0px,#ffffff30 12px,#11050825 22px,#ffffff0c 35px),linear-gradient(95deg,#442a31,var(--fabric) 16%,var(--fabric) 78%,#30121c);overflow:hidden;clip-path:polygon(5% 0,95% 0,100% 100%,0% 100%);box-shadow:0 14px 24px #3b26132b;transition:transform .35s,filter .35s}
+.rack-garment::before{content:"";position:absolute;inset:0 auto 0 6px;width:14px;background:linear-gradient(90deg,#d8b36b,#f5da9d,#ad8149);opacity:.9;box-shadow:3px 0 3px #24111830}
+.fabric-pleats{position:absolute;inset:0;background:repeating-linear-gradient(96deg,transparent 0px,#21080a50 9px,#ffffff32 16px,transparent 25px);mix-blend-mode:overlay}
+.fabric-zari{position:absolute;left:0;right:0;bottom:12px;height:59px;border-top:7px double #ebc87e;border-bottom:5px solid #b78e51;background:repeating-linear-gradient(135deg,#c29b4d 0 7px,#f5d895 7px 8px,#b88c3c 8px 15px,#f8daa0 15px 16px);box-shadow:0 -5px 0 #5b3a3144}
+.rack-item:hover .rack-garment{filter:brightness(1.12);transform:translateY(-3px)}
 .rack-item-name{text-transform:uppercase;margin-top:14px;letter-spacing:.11em;font-size:9px;font-weight:800;min-height:16px}
 .rack-item-price{font-size:11px;color:#8f6342;margin-top:4px;font-weight:700}
 .rack-bottom{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #eee3d8;padding-top:15px;letter-spacing:.15em;font-size:9px;color:#9e8d7e}
