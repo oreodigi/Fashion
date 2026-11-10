@@ -7,12 +7,9 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 const chapters = ['home', 'archive', 'looks', 'pick', 'rack', 'muse', 'reels', 'bridal'];
 
 /**
- * Motion Studio: a single animation owner for scroll orchestration.
- * React owns data, buttons, and selected carousel items; CSS owns product-card
- * selection transforms. GSAP only animates wrappers, headings, and visual layers.
- *
- * ScrollTrigger scenes never pin or hijack scrolling. Native scroll and touch
- * work normally, and every timeline/listener is cleaned on unmount or resize.
+ * Every chapter has its own entrance choreography. Section timelines replay
+ * when revisited, but never pin, force-scroll, or manipulate carousel items
+ * whose transforms are owned by React/CSS. The app separately owns autoplay.
  */
 export default function MotionDirector({ rootRef, onChapterChange }) {
   useGSAP(() => {
@@ -23,23 +20,17 @@ export default function MotionDirector({ rootRef, onChapterChange }) {
     if (progress) {
       gsap.fromTo(progress, { scaleX: 0 }, {
         scaleX: 1, ease: 'none',
-        scrollTrigger: { trigger: root, start: 'top top', end: 'bottom bottom', scrub: 0.45 },
+        scrollTrigger: { trigger: root, start: 'top top', end: 'bottom bottom', scrub: 0.4 },
       });
     }
 
-    const chapterNodes = chapters
-      .map(id => root.querySelector(`#${id}`))
-      .filter(Boolean);
-
-    // Chapter labels remain useful in reduced-motion mode.
-    chapterNodes.forEach(node => {
-      const showChapter = () => onChapterChange(node.id);
+    chapters.forEach(id => {
+      const node = root.querySelector(`#${id}`);
+      if (!node) return;
       ScrollTrigger.create({
-        trigger: node,
-        start: 'top 55%',
-        end: 'bottom 55%',
-        onEnter: showChapter,
-        onEnterBack: showChapter,
+        trigger: node, start: 'top 55%', end: 'bottom 55%',
+        onEnter: () => onChapterChange(id),
+        onEnterBack: () => onChapterChange(id),
       });
     });
 
@@ -53,26 +44,45 @@ export default function MotionDirector({ rootRef, onChapterChange }) {
       const { desktop, mobile, motion, finePointer } = context.conditions;
       if (!motion) return;
 
-      // CHAPTER 01: A cinematic but non-blocking three-beat entrance.
-      const prologue = gsap.timeline({ defaults: { ease: 'power3.out' }, delay: 0.08 });
-      prologue
-        .from('.hero-kicker', { autoAlpha: 0, y: 18, duration: 0.65 })
-        .from('.hero h1', { autoAlpha: 0, y: 65, duration: 1.1 }, '-=0.34')
-        .from('.hero p', { autoAlpha: 0, y: 24, duration: 0.77 }, '-=0.61')
-        .from('.hero-buttons .btn', { autoAlpha: 0, y: 22, duration: 0.58, stagger: 0.12 }, '-=0.42')
-        .from('.hero-footnote', { autoAlpha: 0, y: 13, duration: 0.5 }, '-=0.18');
+      const distance = mobile ? 35 : 85;
+      const base = { ease: 'power3.out', duration: mobile ? 0.75 : 1.06 };
+      const createChapter = (id, beats, start = 'top 83%') => {
+        const section = root.querySelector(id);
+        if (!section) return;
+        const timeline = gsap.timeline({ paused: true, defaults: base });
+        beats.forEach(([selector, from, position]) => {
+          const elements = section.querySelectorAll(selector);
+          if (!elements.length) return;
+          // "from" runs only when its section enters the viewport. Elements
+          // remain fully visible if JS animations never start.
+          timeline.from(elements, {
+            autoAlpha: 0,
+            ...from,
+            immediateRender: false,
+            clearProps: 'transform,opacity,visibility,filter',
+          }, position);
+        });
+        ScrollTrigger.create({
+          trigger: section, start, end: 'bottom 15%',
+          onEnter: () => timeline.restart(),
+          onEnterBack: () => timeline.restart(),
+        });
+      };
 
-      // Camera-depth effect. The photo is GSAP-owned; the static CSS keyframes
-      // on the same image are disabled in motion.css to avoid transform fights.
-      gsap.fromTo('.hero-media img',
-        { scale: 1.025, yPercent: 0 },
-        {
-          scale: desktop ? 1.17 : 1.095,
-          yPercent: desktop ? 9 : 4,
-          ease: 'none',
-          scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 0.8 },
-        }
-      );
+      // Chapter 01: the hero opens like a theatre curtain.
+      const intro = gsap.timeline({ defaults: base, delay: 0.1 });
+      intro
+        .from('.hero-kicker', { autoAlpha: 0, x: -38, duration: 0.65, immediateRender: false })
+        .from('.hero h1', { autoAlpha: 0, y: mobile ? 45 : 86, rotationX: 9, duration: 1.25, immediateRender: false }, '-=.33')
+        .from('.hero p', { autoAlpha: 0, x: -32, duration: 0.78, immediateRender: false }, '-=.66')
+        .from('.hero-buttons .btn', { autoAlpha: 0, y: 30, stagger: .16, duration: .68, immediateRender: false }, '-=.39')
+        .from('.hero-footnote', { autoAlpha: 0, y: 15, duration: .55, immediateRender: false }, '-=.2');
+
+      gsap.fromTo('.hero-media img', { scale: 1.025, yPercent: 0 }, {
+        scale: desktop ? 1.17 : 1.095,
+        yPercent: desktop ? 9 : 4, ease: 'none',
+        scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .8 },
+      });
       if (desktop) {
         gsap.to('.ornament-one', {
           rotation: 24, y: 55, ease: 'none',
@@ -84,74 +94,81 @@ export default function MotionDirector({ rootRef, onChapterChange }) {
         });
       }
 
-      // Heading animations. Use the wrapper only, never the child elements
-      // whose transforms are controlled by the React carousel or CSS hover.
-      root.querySelectorAll('.reveal:not(.mood-card)').forEach((element) => {
-        if (element.classList.contains('film-frame')) return;
-        gsap.from(element, {
-          autoAlpha: 0, y: mobile ? 22 : 38, duration: mobile ? 0.68 : 0.95,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: element, start: 'top 91%', once: true },
-        });
-      });
+      // Chapter 02: titles fly from the left, gold arches rise one by one.
+      createChapter('#archive', [
+        ['.archive-heading .eyebrow', { x: -distance, duration: .6 }, 0],
+        ['.archive-heading h2', { x: -distance * 1.35, y: 15, duration: 1.18 }, '-=.25'],
+        ['.archive-heading p', { x: distance * .65, duration: .8 }, '-=.72'],
+        ['.mood-arch', { y: distance, scale: .82, rotation: -7, stagger: .12, duration: 1.15 }, '-=.46'],
+        ['.mood-card strong', { y: 18, stagger: .09, duration: .6 }, '-=.78'],
+        ['.archive-bottom', { y: 22, duration: .7 }, '-=.46'],
+      ]);
 
-      // CHAPTER 02: Six temple arches rise in a single, measured wave.
-      const arches = gsap.utils.toArray('.mood-arch', root);
-      if (arches.length) {
-        gsap.from(arches, {
-          autoAlpha: 0, y: mobile ? 27 : 70, scale: 0.9,
-          duration: 1.05, ease: 'power3.out',
-          stagger: { each: mobile ? 0.055 : 0.105, from: 'start' },
-          scrollTrigger: { trigger: '.mood-grid', start: 'top 88%', once: true },
-        });
-      }
+      // Chapter 03: two opposing entrances meet around the lookbook.
+      createChapter('#looks', [
+        ['.looks-header', { y: -45, duration: .85 }, 0],
+        ['.look-stage', { x: -distance * 1.3, rotationY: -8, duration: 1.25 }, '-=.38'],
+        ['.look-panel', { x: distance * 1.2, rotationY: 8, duration: 1.25 }, '-=1.0'],
+      ]);
 
-      // CHAPTER 04: Photos unfold inside their existing curved product cards.
-      const cardPhotos = gsap.utils.toArray('.silk-photo img', root);
-      if (cardPhotos.length) {
-        gsap.from(cardPhotos, {
-          autoAlpha: 0, y: 37, scale: 1.12, duration: 1.0,
-          ease: 'power3.out', stagger: 0.085,
-          scrollTrigger: { trigger: '.silk-scroll', start: 'top 90%', once: true },
-        });
-      }
+      // Chapter 04: cards sweep in like a row of silk swatches.
+      createChapter('#pick', [
+        ['.pick-top', { x: distance, duration: .96 }, 0],
+        ['.silk-scroll', { y: distance * 1.1, scale: .9, rotationX: 9, duration: 1.2 }, '-=.36'],
+        ['.silk-photo img', { y: 32, scale: 1.11, stagger: .07, duration: .9 }, '-=.98'],
+        ['.pick-hint', { y: 24, duration: .7 }, '-=.48'],
+      ]);
 
-      // CHAPTER 05: Hanger rail drops into place with a gentle silk reveal.
-      gsap.from('.rack-viewport', {
-        autoAlpha: 0, y: 56, duration: 1.1, ease: 'power3.out',
-        scrollTrigger: { trigger: '.rack-viewport', start: 'top 88%', once: true },
-      });
+      // Chapter 05: the chrome rail extends before the collection drops in.
+      createChapter('#rack', [
+        ['.rack-heading', { y: -47, duration: .9 }, 0],
+        ['.rack-filters', { y: 28, duration: .75 }, '-=.45'],
+        ['.rack-viewport', { y: distance, duration: 1.16 }, '-=.3'],
+        ['.rack-garment', { autoAlpha: 0, y: -25, stagger: .045, duration: .7 }, '-=.85'],
+      ]);
 
-      // CHAPTER 06: Framed editorial film assembles as an optical centrepiece.
-      gsap.from('.film-frame', {
-        autoAlpha: 0, y: 38, scale: 0.93, duration: 1.15, ease: 'power3.out',
-        scrollTrigger: { trigger: '.muse-content', start: 'top 86%', once: true },
-      });
+      // Chapter 06: opposing image columns fly in; film zooms into focus.
+      createChapter('#muse', [
+        ['.muse-heading', { scale: .78, y: 38, duration: .9 }, 0],
+        ['.muse-photos-left', { x: -distance, duration: 1.15 }, '-=.3'],
+        ['.muse-photos-right', { x: distance, duration: 1.15 }, '<'],
+        ['.film-frame', { scale: .82, y: 55, rotationY: 7, duration: 1.35 }, '-=1.02'],
+        ['.muse-bottom', { y: 28, duration: .75 }, '-=.45'],
+      ]);
 
-      // CHAPTERS 07–08: Preserve existing carousel transforms by animating
-      // their parent stages, not the currently selected product cards.
-      gsap.from('.reel-arc', {
-        autoAlpha: 0, y: 54, scale: 0.94, duration: 1.1, ease: 'power3.out',
-        scrollTrigger: { trigger: '.reel-arc', start: 'top 88%', once: true },
-      });
-      gsap.from('.bridal-carousel', {
-        autoAlpha: 0, y: 48, scale: 0.96, duration: 1.12, ease: 'power3.out',
-        scrollTrigger: { trigger: '.bridal-carousel', start: 'top 88%', once: true },
-      });
+      // Chapter 07: the arc emerges from depth; individual cards keep their
+      // existing CSS/React transforms so clicking and cycling always work.
+      createChapter('#reels', [
+        ['.reels-head', { x: -distance, duration: .95 }, 0],
+        ['.reel-arc', { scale: .69, y: 85, rotationY: -12, duration: 1.35 }, '-=.37'],
+        ['.reel-note', { y: 20, duration: .7 }, '-=.5'],
+      ]);
 
-      gsap.from('.closing h2', {
-        autoAlpha: 0, y: 38, duration: 1.3, ease: 'power3.out',
-        scrollTrigger: { trigger: '.closing', start: 'top 75%', once: true },
-      });
+      // Chapter 08: a soft vertical reveal, like opening a bridal jewellery box.
+      createChapter('#bridal', [
+        ['.bridal-head', { y: -distance, scale: .89, duration: 1.04 }, 0],
+        ['.bridal-carousel', { scale: .76, y: 70, rotationX: -12, duration: 1.4 }, '-=.33'],
+        ['.bridal-info', { y: 52, duration: .95 }, '-=.64'],
+      ]);
 
+      // The closing vignette and footer get their own complete entrance.
+      createChapter('.closing', [
+        ['.closing-symbol', { y: -38, scale: .4, rotation: -60, duration: 1.1 }, 0],
+        ['.closing p', { y: 30, duration: .75 }, '-=.54'],
+        ['.closing h2', { y: 75, scale: .85, duration: 1.28 }, '-=.46'],
+        ['.closing .btn', { y: 38, duration: .78 }, '-=.44'],
+      ], 'top 86%');
+      createChapter('.footer', [
+        ['.footer-top', { y: 48, duration: .95 }, 0],
+        ['.footer-bottom', { y: 20, duration: .7 }, '-=.35'],
+      ], 'top 94%');
+
+      // Fine pointer-only, with bounded tilt and explicit cleanup.
       if (!finePointer) return;
-
-      // Fine-pointer-only spotlight + bounded physical tilt. No continuous
-      // animation loop, no scrolling interference, and no global listeners.
       const cards = gsap.utils.toArray('.silk-card', root);
       const cleanups = [];
       cards.forEach(card => {
-        const onMove = event => {
+        const move = event => {
           const r = card.getBoundingClientRect();
           const x = Math.min(1, Math.max(0, (event.clientX - r.left) / r.width));
           const y = Math.min(1, Math.max(0, (event.clientY - r.top) / r.height));
@@ -161,26 +178,23 @@ export default function MotionDirector({ rootRef, onChapterChange }) {
           card.style.setProperty('--tilt-y', `${((.5 - y) * 7).toFixed(2)}deg`);
           card.classList.add('is-tilting');
         };
-        const onLeave = () => {
+        const leave = () => {
           card.classList.remove('is-tilting');
           card.style.setProperty('--tilt-x', '0deg');
           card.style.setProperty('--tilt-y', '0deg');
         };
-        card.addEventListener('pointermove', onMove, { passive: true });
-        card.addEventListener('pointerleave', onLeave);
+        card.addEventListener('pointermove', move, { passive: true });
+        card.addEventListener('pointerleave', leave);
         cleanups.push(() => {
-          card.removeEventListener('pointermove', onMove);
-          card.removeEventListener('pointerleave', onLeave);
+          card.removeEventListener('pointermove', move);
+          card.removeEventListener('pointerleave', leave);
           card.classList.remove('is-tilting');
         });
       });
       return () => cleanups.forEach(clean => clean());
     });
 
-    // The enclosing useGSAP context handles ScrollTriggers and timelines.
-    // matchMedia has separate resize/reduced-motion cleanup.
     return () => media.revert();
   }, { scope: rootRef });
-
   return null;
 }
