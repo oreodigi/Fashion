@@ -4,7 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const chapters = ['home', 'archive', 'looks', 'pick', 'rack', 'muse', 'reels', 'bridal'];
+const chapters = ['home', 'archive', 'looks', 'pick', 'rack', 'gallery', 'muse', 'reels', 'bridal'];
 
 /**
  * Every chapter has its own entrance choreography. Section timelines replay
@@ -124,7 +124,14 @@ export default function MotionDirector({ rootRef, onChapterChange }) {
         ['.rack-heading', { y: -47, duration: .9 }, 0],
         ['.rack-filters', { y: 28, duration: .75 }, '-=.45'],
         ['.rack-viewport', { y: distance, duration: 1.16 }, '-=.3'],
-        ['.rack-garment', { autoAlpha: 0, y: -25, stagger: .045, duration: .7 }, '-=.85'],
+        ['.rack-photo-item', { autoAlpha: 0, y: 46, scale: .94, stagger: .055, duration: .92 }, '-=.85'],
+      ]);
+
+      // Chapter 06: real silk portraits fly in as an editorial photo wall.
+      createChapter('#gallery', [
+        ['.gallery-heading', { y: -42, duration: .86 }, 0],
+        ['.gallery-tile', { autoAlpha: 0, y: 65, scale: .88, rotationY: 7, stagger: .11, duration: .95 }, '-=.32'],
+        ['.gallery-texture', { autoAlpha: 0, y: 45, scale: .94, duration: 1.0 }, '-=.37'],
       ]);
 
       // Chapter 06: opposing image columns fly in; film zooms into focus.
