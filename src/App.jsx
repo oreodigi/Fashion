@@ -93,6 +93,7 @@ export default function App() {
  const [motionReady,setMotionReady]=useState(false);
  const silkScrollRef=useRef(null);
  const rackViewportRef=useRef(null);
+ const rackSwipeOriginRef=useRef(0);
  const [activeChapter,setActiveChapter]=useState('home');
  const [visibleSections,setVisibleSections]=useState({});
  const [manualSections,setManualSections]=useState({});
@@ -230,6 +231,21 @@ export default function App() {
  const reelSwipe=useSwipe(direction=>{pauseSection('reels');setReelIndex(i=>(i+direction+reels.length)%reels.length);});
  const bridalSwipe=useSwipe(direction=>{pauseSection('bridal');setBridalIndex(i=>(i+direction+bridal.length)%bridal.length);});
  const museSwipe=useSwipe(direction=>{setFilmOn(false);setFilmFrame(i=>(i+direction+filmImages.length)%filmImages.length);});
+ const rackSwipe=useSwipe(direction=>{
+   pauseSection('rack');
+   const el=rackViewportRef.current;
+   if(!el)return;
+   // Native horizontal scrolling takes priority; fall back only if a swipe
+   // did not move the rail (for example while a scripted scroll was ending).
+   if(Math.abs(el.scrollLeft-rackSwipeOriginRef.current)<20){
+     el.scrollBy({left:direction*185,behavior:'smooth'});
+   }
+ });
+ const stopRackAutoScroll=()=>{
+   pauseSection('rack');
+   const el=rackViewportRef.current;
+   if(el)el.scrollTo({left:el.scrollLeft,behavior:'instant'});
+ };
  return <div className="site" ref={siteRef}>
    {motionReady && <MotionDirector rootRef={siteRef} onChapterChange={setActiveChapter}/>}
    <div className="reading-thread" aria-hidden="true"><span className="reading-thread__bar"/></div>
@@ -304,11 +320,11 @@ export default function App() {
       </div>
     </section>
 
-    <section id="rack" className="section rack" onPointerDown={()=>pauseSection('rack')} onFocusCapture={()=>pauseSection('rack')}>
+    <section id="rack" className="section rack" onPointerDown={stopRackAutoScroll} onFocusCapture={()=>pauseSection('rack')}>
      <div className="section-container">
       <div className="rack-heading reveal"><SectionTag>THE COLLECTION</SectionTag><h2 className="display-heading">Every silk, <em>on the rail.</em></h2><p>Come closer. Discover the details, the drape and the story behind each piece.</p></div>
       <div className="rack-filters reveal">{filters.map(f=><button key={f} onClick={()=>{pauseSection('rack');setRackFilter(f);setActiveRack(0);}} className={rackFilter===f?'active':''}>{f}<span>{f==='All pieces'?products.length:products.filter(p=>p.category===f).length}</span></button>)}</div>
-      <div className="rack-viewport" ref={rackViewportRef}><div className="rack-rod"></div><div className="rack-list">{railProducts.map((p,i)=><button key={p.id} className={`rack-item ${i===activeRack && canAutoplay && visibleSections.rack && !manualSections.rack?'is-auto-featured':''}`} onClick={()=>openDetail(p)} aria-label={`View details of ${p.name}`}><span className="hanger-hook"></span><span className="hanger-shoulders"></span><span className="rack-garment" style={{'--fabric':p.color}}><span className="fabric-pleats"></span><span className="fabric-zari"></span></span><span className="rack-item-name">{p.name}</span><span className="rack-item-price">{money(p.price)}</span></button>)}</div></div>
+      <div className="rack-viewport" ref={rackViewportRef} onTouchStart={event=>{rackSwipeOriginRef.current=rackViewportRef.current?.scrollLeft??0;rackSwipe.handlers.onTouchStart(event);}} onTouchEnd={rackSwipe.handlers.onTouchEnd} onTouchCancel={rackSwipe.handlers.onTouchCancel}><div className="rack-rod"></div><div className="rack-list">{railProducts.map((p,i)=><button key={p.id} className={`rack-item ${i===activeRack && canAutoplay && visibleSections.rack && !manualSections.rack?'is-auto-featured':''}`} onClick={()=>openDetail(p)} aria-label={`View details of ${p.name}`}><span className="hanger-hook"></span><span className="hanger-shoulders"></span><span className="rack-garment" style={{'--fabric':p.color}}><span className="fabric-pleats"></span><span className="fabric-zari"></span></span><span className="rack-item-name">{p.name}</span><span className="rack-item-price">{money(p.price)}</span></button>)}</div></div>
       <div className="rack-bottom"><span>EXPLORE THE COLLECTION · {railProducts.length} PIECES</span><span>SELECT ANY PIECE TO VIEW DETAILS <ArrowUpRight size={14}/></span></div>
      </div>
     </section>
