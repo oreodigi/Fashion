@@ -11,6 +11,15 @@ Interactive editorial showcase inspired by the design brief and screenshots shar
 - Editorial motion experience based on still images. There are no actual films or video files in the original reference.
 - Desktop and mobile layouts, hover effects, reduced-motion support and keyboard Escape for overlays.
 
+## Motion Studio enhancement
+
+The motion system is deliberately split between:
+- `src/MotionDirector.jsx`: GSAP + ScrollTrigger chapter tracking, hero camera depth, staged entrances, collection/reel/bridal reveals, and fine-pointer tilt listeners. Animations are React-scoped with `@gsap/react`, and listeners/contexts are reverted on unmount or media-query change.
+- `src/motion.css`: visual lighting, highlight treatments, CSS-only hover/press feedback, and reduced-motion styles.
+- `src/App.jsx`: stateful wishlist, bag, filters and selected carousel items. Existing React interactions remain the source of truth.
+
+No scroll-jacking, pinning, WebGL engine or custom RAF loop was introduced. Motion is restricted on touch/mobile and disabled for `prefers-reduced-motion` where ornamental. The scroll progress indicator still conveys useful position.
+
 ## Build
 ```bash
 npm ci
